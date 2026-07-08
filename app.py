@@ -1,3 +1,19 @@
+from flask import Flask, request, jsonify
+import pandas as pd
+import joblib
+import os
+
+app = Flask(__name__)
+
+# Load trained model
+model = joblib.load("xgboost_model.pkl")
+
+
+@app.route("/")
+def home():
+    return "Smart Spirometer AI Server Running!"
+
+
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
@@ -17,13 +33,8 @@ def predict():
             "Baseline_PEF_Ls": data["Baseline_PEF_Ls"]
         }])
 
-        print(features)
-
         prediction = model.predict(features)[0]
-        print("Prediction OK")
-
         probability = model.predict_proba(features)[0]
-        print("Probability OK")
 
         result = "Obstructive" if prediction == 1 else "Normal"
 
@@ -36,3 +47,8 @@ def predict():
     except Exception as e:
         print("ERROR:", str(e))
         return jsonify({"error": str(e)}), 400
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
